@@ -3,37 +3,29 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-import streamlit as st
 
+# ------------------------------
+# CSS Styling
+# ------------------------------
 st.markdown("""
 <style>
-
-/* Main background */
 .stApp {
     background-color: #f5f7fa;
     font-family: 'Segoe UI', sans-serif;
 }
-
-/* Title styling */
 h1 {
     color: #1f7a1f;
     text-align: center;
     font-weight: 700;
 }
-
-/* Section headers */
 h2, h3 {
     color: #2c3e50;
     margin-top: 30px;
 }
-
-/* Sidebar styling */
 section[data-testid="stSidebar"] {
     background-color: #eaf4ea;
     padding: 20px;
 }
-
-/* Buttons */
 .stButton > button {
     background-color: #2ecc71;
     color: white;
@@ -42,39 +34,19 @@ section[data-testid="stSidebar"] {
     font-weight: 600;
     border: none;
 }
-
 .stButton > button:hover {
     background-color: #27ae60;
-    color: white;
 }
-
-/* Dataframe styling */
-[data-testid="stDataFrame"] {
-    background-color: white;
-    border-radius: 10px;
-    padding: 10px;
-}
-
-/* Info box */
-.stAlert {
-    border-radius: 10px;
-}
-
-/* Plot container */
-.css-1kyxreq {
-    background-color: white;
-    padding: 15px;
-    border-radius: 12px;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
-
+# ------------------------------
+# Title & Description
 # ------------------------------
 st.title("🟢 Customer Segmentation Dashboard")
 st.write(
-    "This system uses **K-Means Clustering** to group customers based on their purchasing behavior and similarities.\n\n"
+    "This system uses **K-Means Clustering** to group customers based on their "
+    "purchasing behavior and similarities.\n\n"
     "👉 Discover hidden customer groups without predefined labels."
 )
 
@@ -83,19 +55,19 @@ st.write(
 # ------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv('Wholesale customers data.csv')
+    df = pd.read_csv("Wholesale customers data.csv")
     return df
 
 df = load_data()
 
-# Clean column names (replace spaces with underscores)
-df.columns = df.columns.str.replace(' ', '_')
+# Clean column names
+df.columns = df.columns.str.replace(" ", "_")
 
-# Select only numerical columns
-num_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+# Numerical columns
+num_cols = df.select_dtypes(include=["int64", "float64"]).columns.tolist()
 
 # ------------------------------
-# Sidebar – Input Section
+# Sidebar Controls
 # ------------------------------
 st.sidebar.header("🔧 Clustering Controls")
 
@@ -105,11 +77,8 @@ features = st.sidebar.multiselect(
     default=num_cols[:2]
 )
 
-
-k = st.sidebar.slider("Number of Clusters (K)", min_value=2, max_value=10, value=3)
-
+k = st.sidebar.slider("Number of Clusters (K)", 2, 10, 3)
 random_state = st.sidebar.number_input("Random State (Optional)", value=42)
-
 run = st.sidebar.button("🟦 Run Clustering")
 
 # ------------------------------
@@ -117,69 +86,68 @@ run = st.sidebar.button("🟦 Run Clustering")
 # ------------------------------
 if run:
     if len(features) < 2:
-        st.error("❗ Please select at least two features for clustering.")
+        st.error("❗ Please select at least two features.")
     else:
-            X = df[features]
+        # Feature selection
+        X = df[features]
 
-    # Scaling
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+        # Scaling
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
 
-    # K-Means Model
-    kmeans = KMeans(n_clusters=k, random_state=random_state)
-    clusters = kmeans.fit_predict(X_scaled)
+        # K-Means
+        kmeans = KMeans(n_clusters=k, random_state=random_state)
+        df["Cluster"] = kmeans.fit_predict(X_scaled)
 
-    df['Cluster'] = clusters
-            centers = scaler.inverse_transform(kmeans.cluster_centers_)
+        # Cluster centers
+        centers = scaler.inverse_transform(kmeans.cluster_centers_)
 
-        # Use first two features for visualization
-        vis_feature1 = features[0]
-        vis_feature2 = features[1]
+        # First two features for visualization
+        f1, f2 = features[0], features[1]
 
-    # ------------------------------
-    # Visualization Section
-    # ------------------------------
-    st.subheader("📊 Cluster Visualization")
+        # ------------------------------
+        # Visualization
+        # ------------------------------
+        st.subheader("📊 Cluster Visualization")
 
-    fig, ax = plt.subplots()
-    scatter =         ax.scatter(df[vis_feature1], df[vis_feature2], c=df['Cluster'])
-            ax.scatter(centers[:, features.index(vis_feature1)],
-                   centers[:, features.index(vis_feature2)],
-                   s=200, marker='X')
+        fig, ax = plt.subplots()
+        ax.scatter(df[f1], df[f2], c=df["Cluster"])
+        ax.scatter(
+            centers[:, features.index(f1)],
+            centers[:, features.index(f2)],
+            s=200,
+            marker="X"
+        )
 
-            ax.set_xlabel(vis_feature1)
-        ax.set_ylabel(vis_feature2)
+        ax.set_xlabel(f1)
+        ax.set_ylabel(f2)
         ax.set_title("Customer Clusters")
+        st.pyplot(fig)
 
-    st.pyplot(fig)
+        # ------------------------------
+        # Cluster Summary
+        # ------------------------------
+        st.subheader("📋 Cluster Summary")
 
-    # ------------------------------
-    # Cluster Summary Section
-    # ------------------------------
-    st.subheader("📋 Cluster Summary")
-
-            summary = df.groupby('Cluster')[features].mean()
-        summary['Customer_Count'] = df['Cluster'].value_counts().sort_index()
-
+        summary = df.groupby("Cluster")[features].mean()
+        summary["Customer_Count"] = df["Cluster"].value_counts().sort_index()
         st.dataframe(summary)
 
-    # ------------------------------
-    # Business Interpretation Section
-    # ------------------------------
-    st.subheader("💡 Business Interpretation")
+        # ------------------------------
+        # Business Interpretation
+        # ------------------------------
+        st.subheader("💡 Business Interpretation")
 
-            for cluster_id in summary.index:
+        for cid in summary.index:
             st.write(
-                f"🟢 **Cluster {cluster_id}:** Customers with similar purchasing behaviour across the selected features."
+                f"🟢 **Cluster {cid}:** Customers with similar purchasing behaviour "
+                f"across the selected features."
             )
 
-    # ------------------------------
-    # User Guidance Section
-    # ------------------------------
-    st.info(
-        "Customers in the same cluster exhibit similar purchasing behaviour and "
-        "can be targeted with similar business strategies."
-    )
+        st.info(
+            "Customers in the same cluster exhibit similar purchasing behaviour "
+            "and can be targeted with similar business strategies."
+        )
 
 else:
     st.warning("👈 Please select features and click **Run Clustering** to view results.")
