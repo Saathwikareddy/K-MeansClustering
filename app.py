@@ -3,6 +3,72 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
+import streamlit as st
+
+st.markdown("""
+<style>
+
+/* Main background */
+.stApp {
+    background-color: #f5f7fa;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Title styling */
+h1 {
+    color: #1f7a1f;
+    text-align: center;
+    font-weight: 700;
+}
+
+/* Section headers */
+h2, h3 {
+    color: #2c3e50;
+    margin-top: 30px;
+}
+
+/* Sidebar styling */
+section[data-testid="stSidebar"] {
+    background-color: #eaf4ea;
+    padding: 20px;
+}
+
+/* Buttons */
+.stButton > button {
+    background-color: #2ecc71;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    border: none;
+}
+
+.stButton > button:hover {
+    background-color: #27ae60;
+    color: white;
+}
+
+/* Dataframe styling */
+[data-testid="stDataFrame"] {
+    background-color: white;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+/* Info box */
+.stAlert {
+    border-radius: 10px;
+}
+
+/* Plot container */
+.css-1kyxreq {
+    background-color: white;
+    padding: 15px;
+    border-radius: 12px;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 # ------------------------------
 # App Title & Description
@@ -109,3 +175,4 @@ if run:
 
 else:
     st.warning("👈 Please select features and click **Run Clustering** to view results.")
+
