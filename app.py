@@ -70,8 +70,7 @@ section[data-testid="stSidebar"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ------------------------------
-# App Title & Description
+
 # ------------------------------
 st.title("🟢 Customer Segmentation Dashboard")
 st.write(
@@ -100,8 +99,12 @@ num_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
 # ------------------------------
 st.sidebar.header("🔧 Clustering Controls")
 
-feature1 = st.sidebar.selectbox("Select Feature 1", num_cols)
-feature2 = st.sidebar.selectbox("Select Feature 2", num_cols, index=1)
+features = st.sidebar.multiselect(
+    "Select Features (Minimum 2)",
+    num_cols,
+    default=num_cols[:2]
+)
+
 
 k = st.sidebar.slider("Number of Clusters (K)", min_value=2, max_value=10, value=3)
 
@@ -113,7 +116,10 @@ run = st.sidebar.button("🟦 Run Clustering")
 # Clustering Logic
 # ------------------------------
 if run:
-    X = df[[feature1, feature2]]
+    if len(features) < 2:
+        st.error("❗ Please select at least two features for clustering.")
+    else:
+            X = df[features]
 
     # Scaling
     scaler = StandardScaler()
@@ -124,7 +130,11 @@ if run:
     clusters = kmeans.fit_predict(X_scaled)
 
     df['Cluster'] = clusters
-    centers = scaler.inverse_transform(kmeans.cluster_centers_)
+            centers = scaler.inverse_transform(kmeans.cluster_centers_)
+
+        # Use first two features for visualization
+        vis_feature1 = features[0]
+        vis_feature2 = features[1]
 
     # ------------------------------
     # Visualization Section
@@ -132,12 +142,14 @@ if run:
     st.subheader("📊 Cluster Visualization")
 
     fig, ax = plt.subplots()
-    scatter = ax.scatter(df[feature1], df[feature2], c=df['Cluster'])
-    ax.scatter(centers[:, 0], centers[:, 1], s=200, marker='X')
+    scatter =         ax.scatter(df[vis_feature1], df[vis_feature2], c=df['Cluster'])
+            ax.scatter(centers[:, features.index(vis_feature1)],
+                   centers[:, features.index(vis_feature2)],
+                   s=200, marker='X')
 
-    ax.set_xlabel(feature1)
-    ax.set_ylabel(feature2)
-    ax.set_title("Customer Clusters")
+            ax.set_xlabel(vis_feature1)
+        ax.set_ylabel(vis_feature2)
+        ax.set_title("Customer Clusters")
 
     st.pyplot(fig)
 
@@ -146,24 +158,20 @@ if run:
     # ------------------------------
     st.subheader("📋 Cluster Summary")
 
-    summary = df.groupby('Cluster')[[feature1, feature2]].mean()
-    summary['Customer_Count'] = df['Cluster'].value_counts().sort_index()
+            summary = df.groupby('Cluster')[features].mean()
+        summary['Customer_Count'] = df['Cluster'].value_counts().sort_index()
 
-    st.dataframe(summary)
+        st.dataframe(summary)
 
     # ------------------------------
     # Business Interpretation Section
     # ------------------------------
     st.subheader("💡 Business Interpretation")
 
-    for cluster_id in summary.index:
-        avg1 = summary.loc[cluster_id, feature1]
-        avg2 = summary.loc[cluster_id, feature2]
-
-        st.write(
-            f"🟢 **Cluster {cluster_id}:** Customers showing similar purchasing behavior with "
-            f"average {feature1} = {avg1:.2f} and {feature2} = {avg2:.2f}."
-        )
+            for cluster_id in summary.index:
+            st.write(
+                f"🟢 **Cluster {cluster_id}:** Customers with similar purchasing behaviour across the selected features."
+            )
 
     # ------------------------------
     # User Guidance Section
@@ -175,4 +183,3 @@ if run:
 
 else:
     st.warning("👈 Please select features and click **Run Clustering** to view results.")
-
